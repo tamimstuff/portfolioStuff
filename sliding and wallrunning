@@ -1,0 +1,253 @@
+local vel = 100 --might be badly organized but SHHHH SHHH SH SH SHHHHHHHHHHHHHHHHHHHHHH IF IT WORKS IT WORKS okay im ngl i was js doin random stuff PLEASE ignore verity theme
+local grav = Vector3.zero
+local sliding = false
+local UIS = game:GetService("UserInputService")
+local loopAnim = nil
+local char = game.Players.LocalPlayer.Character or game.Players.LocalPlayer.CharacterAppearanceLoaded:Wait()
+local hum = char:FindFirstChildOfClass("Humanoid")
+local humrp = char:WaitForChild("HumanoidRootPart")
+local walldashing = false
+local wd_y = 0
+local l_Touch = false
+local r_Touch = false
+--local wd_snapping = Vector3.zero
+local l_Touch2 = false
+local r_Touch2 = false
+
+char["Left Arm"].Touched:Connect(function()
+	l_Touch2 = true
+end)
+char["Left Arm"].TouchEnded:Connect(function()
+	l_Touch2 = false
+end)
+
+char["Right Arm"].Touched:Connect(function()
+	r_Touch2 = true
+end)
+char["Right Arm"].TouchEnded:Connect(function()
+	r_Touch2 = false
+end)
+
+UIS.InputBegan:Connect(function(hotkey, isTyping)
+	if isTyping then return end
+	if hotkey.KeyCode == Enum.KeyCode.C and hum.FloorMaterial ~= Enum.Material.Air and walldashing == false then
+		
+		script["verity theme"]:Resume()
+		char.Torso.CanCollide = false
+		
+		local lucky = script.start:GetChildren()[math.random(1,#script.start:GetChildren())]
+		if lucky:GetAttribute("startPos") then
+			lucky.TimePosition = lucky:GetAttribute("startPos")
+		end
+		
+		lucky.PlaybackSpeed = Random.new():NextNumber(0.6,1.4)
+		lucky:Play()
+		
+		grav = Vector3.zero
+		if math.round(humrp.AssemblyLinearVelocity.Magnitude) ~= 0 then
+			vel = humrp.AssemblyLinearVelocity.Magnitude + hum.WalkSpeed /2 
+		else
+			vel = 35
+		end
+		
+		local anim = hum:FindFirstChildOfClass("Animator"):LoadAnimation(script.Parent.start)
+		anim.Priority = Enum.AnimationPriority.Action4
+		anim.Looped = false
+		
+		loopAnim = hum:FindFirstChildOfClass("Animator"):LoadAnimation(script.Parent.loop_Slide)
+		loopAnim.Priority = Enum.AnimationPriority.Action4
+		loopAnim.Looped = true
+		
+		anim:Play()
+		script.Parent.fx:FireServer(true)
+		sliding = true
+		
+		task.wait(anim.Length)
+		if sliding == true then
+			loopAnim:Play()
+		end
+		
+	elseif hotkey.KeyCode == Enum.KeyCode.R and hum.FloorMaterial == Enum.Material.Air and sliding == false then
+		l_Touch = false
+		r_Touch = false
+		
+		local params = RaycastParams.new()
+		params.FilterType = Enum.RaycastFilterType.Exclude
+		params:AddToFilter(char)
+		
+		local raycast1 = workspace:Shapecast(humrp, humrp.CFrame.RightVector * 3, params)
+		local raycast2 = workspace:Shapecast(humrp, humrp.CFrame.RightVector * -3, params)
+		
+		if (raycast2 or raycast1) and not (raycast1 and raycast2) then
+			if raycast1 then
+				r_Touch = true
+			else
+				l_Touch =  true
+			end
+			
+			char.Torso.CanCollide = true
+			wd_y = humrp.Position.Y
+			walldashing = true
+
+			if math.round(humrp.AssemblyLinearVelocity.Magnitude) ~= 0 then
+				vel = humrp.AssemblyLinearVelocity.Magnitude + hum.WalkSpeed /2 
+			else
+				vel = 35
+			end
+		end
+	end
+end)
+local function stopSliding()
+	for i, v in pairs(hum:FindFirstChildOfClass("Animator"):GetPlayingAnimationTracks()) do
+		if v.Name == "loop_Slide" then
+			v:Stop()
+		end
+	end
+	script["verity theme"]:Pause()
+	
+	local lucky = script.endd:GetChildren()[math.random(1,#script.endd:GetChildren())]
+	if lucky:GetAttribute("startPos") then
+		lucky.TimePosition = lucky:GetAttribute("startPos")
+	end
+	
+	lucky.PlaybackSpeed = Random.new():NextNumber(0.6,1.4)
+	lucky:Play()
+	
+	hum.WalkSpeed = vel
+	sliding = false
+	script.Parent.fx:FireServer(false)
+	
+	local anim = hum:FindFirstChildOfClass("Animator"):LoadAnimation(script.Parent.endd)
+	anim.Priority = Enum.AnimationPriority.Action4
+	anim.Looped = false
+	
+	loopAnim:Stop()
+	anim:Play()
+end
+local function stopSlidingMini()
+	for i, v in pairs(hum:FindFirstChildOfClass("Animator"):GetPlayingAnimationTracks()) do
+		if v.Name == "loop_Slide" then
+			v:Stop()
+		end
+	end
+	script["verity theme"]:Pause()
+	sliding = false
+	
+	local anim = hum:FindFirstChildOfClass("Animator"):LoadAnimation(script.Parent.endd)
+	anim.Priority = Enum.AnimationPriority.Action4
+	anim.Looped = false
+	
+	loopAnim:Stop()
+	anim:Play()
+end
+UIS.InputEnded:Connect(function(hotkey, isTyping)
+	if isTyping then return end
+	if hotkey.KeyCode == Enum.KeyCode.C and sliding == true then
+		loopAnim:Stop()
+		stopSliding()
+	elseif hotkey.KeyCode == Enum.KeyCode.R and walldashing == true then
+		walldashing = false
+		hum.WalkSpeed = vel
+	end
+end)
+game:GetService("RunService").RenderStepped:Connect(function(dt)
+	if hum.Health >= 0.5 then
+		game.Players.LocalPlayer.PlayerGui.ScreenGui.TextLabel.Text = "speed: " .. tostring(humrp.AssemblyLinearVelocity.Magnitude)
+		if hum.WalkSpeed ~= 0 then
+			hum.WalkSpeed = math.lerp(
+				hum.WalkSpeed,
+				35,
+				dt / 2
+			)
+		end
+		if sliding == true then
+			hum.WalkSpeed = 0
+			vel = vel / (1 + (dt / 3))
+			
+			local params = RaycastParams.new()
+			params.FilterType = Enum.RaycastFilterType.Exclude
+			params:AddToFilter(char)
+			
+			local raycast = workspace:Raycast(humrp.Position,Vector3.new(0,-100,0),params)
+			local raycast2 = workspace:Raycast(humrp.Position,humrp.CFrame.LookVector * 2,params)
+			
+			if raycast and hum.FloorMaterial ~= Enum.Material.Air then
+				local dot = raycast.Normal.Unit:Dot(humrp.CFrame.LookVector.Unit)
+				local angle = math.deg(math.acos(raycast.Normal.Unit.Y))
+				grav = Vector3.zero
+				
+				if dot <= 0 then
+					vel += dot * (angle / 1.6)
+				else
+					vel += dot * (angle)
+				end
+				
+			elseif hum.FloorMaterial == Enum.Material.Air then
+				grav -= Vector3.new(0,dt * workspace.Gravity * 2,0)
+			end
+			
+			humrp.AssemblyLinearVelocity = (humrp.CFrame.LookVector * vel) + grav
+			script["verity theme"].PlaybackSpeed = math.clamp(vel / 40, 0.5, 1.6)
+			
+			if raycast2 then
+				hum.WalkSpeed = vel / 10
+				script.Parent.fx:FireServer("verity")
+				script.scream.PlaybackSpeed = Random.new():NextNumber(0.8,1.2)
+				script.scream:Play()
+				script.impact.PlaybackSpeed = Random.new():NextNumber(0.8,1.2)
+				script.impact:Play()
+				stopSlidingMini()
+			end
+			
+			if vel <= 15 then
+				stopSliding()
+			elseif hum.Jump == true then
+				local velO = 85 + (vel / 4)
+				humrp.AssemblyLinearVelocity = (humrp.CFrame.LookVector * (velO)) + Vector3.new(0, velO / 1.4, 0)
+				hum.WalkSpeed = velO
+				
+				script.Parent.fx:FireServer("falsity")
+				stopSlidingMini()
+				
+				script.boing.PlaybackSpeed = Random.new():NextNumber(0.8,1.2)
+				script.boing:Play()
+			end
+			
+		elseif walldashing == true then
+			hum.WalkSpeed = 0
+			vel = vel / (1 + (dt / 3))
+			--script["verity theme"].PlaybackSpeed = math.clamp(vel / 40, 0.5, 1.6)
+			
+			local params = RaycastParams.new()
+			params.FilterType = Enum.RaycastFilterType.Exclude
+			params:AddToFilter(char)
+			
+			local dir
+			local mag
+			if l_Touch then
+				dir = humrp.CFrame.RightVector * -1
+				mag = 1
+			else
+				dir = humrp.CFrame.RightVector
+				mag = -1
+			end
+			local raycast = workspace:Raycast(humrp.Position,dir * 300,params)
+			
+			if raycast then
+				local pos = raycast.Position - (dir * 2)
+				humrp.CFrame = CFrame.new(Vector3.new(pos.X,wd_y,pos.Z), Vector3.new(pos.X,wd_y,pos.Z) + raycast.Normal.Unit) * CFrame.Angles(0,math.rad(90 * mag),0)
+			elseif not (r_Touch2 or l_Touch2) then
+				walldashing = false
+				hum.WalkSpeed = vel
+			end
+			
+			local velo = (humrp.CFrame.LookVector * vel)
+			humrp.AssemblyLinearVelocity = Vector3.new(velo.X, wd_y - humrp.Position.Y, velo.Z)
+			
+			if vel <= 15 then
+				walldashing = false
+				hum.WalkSpeed = vel
+			end
+		end
+	end
+end)
