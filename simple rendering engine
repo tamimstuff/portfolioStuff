@@ -1,0 +1,85 @@
+local oldies = {} --i made this in like 2024 or something in the middle of a call where a guy was afk please dont mind like any variable names i only changed the code comments
+--settings--
+local range = script.Parent.Range
+local howTallBricks = script.Parent.howTallBricks
+local FOV = script.Parent.FOV
+local howCompactedRays = script.Parent.howCompactedRays --shouldnt change
+local delay = script.Parent.delay
+local partThickness = script.Parent.partThickness
+
+while task.wait(delay.Value) do
+	--CLEANUP clean up clean up
+	for i, v in pairs(oldies) do
+		if v then
+			table.remove(oldies, i)
+			v:Destroy()
+		end
+	end
+	local adding = -(FOV.Value / (FOV.Value / (FOV.Value / 2)))
+	local addingAgain = -((partThickness.Value * FOV.Value) / 2)
+	for i = 1, FOV.Value do
+		adding += howCompactedRays.Value
+		addingAgain += partThickness.Value
+
+	--makes attachments and stuff
+		local attach1 = Instance.new("Attachment")
+		attach1.Parent = script.Parent
+		local attach2 = Instance.new("Attachment")
+		attach2.Parent = script.Parent
+		local beam = Instance.new("Beam")
+		beam.Parent = script.Parent
+		beam.Attachment0 = attach1
+	beam.Attachment1 = attach2
+	
+	--sets up attach2's position
+		attach2.Position = (script.Parent.CFrame * CFrame.Angles(0, math.rad(adding), 0)).LookVector * range.Value
+
+		beam.Transparency = NumberSequence.new(0.9)
+		beam.FaceCamera = true
+	beam.Width0 = 0
+	--the part that makes the beams look cool
+	--the dirction vvv
+		local direction = (attach1.WorldCFrame.Position - attach2.WorldCFrame.Position)
+	
+	local raycast = workspace:Raycast(attach1.WorldPosition , direction, RaycastParams.new())
+	
+	--raycast stuff
+	if raycast then
+		--makes it like display size + beam pos
+		attach2.WorldPosition = raycast.Position
+		workspace.WOAHH.Size = Vector3.new(partThickness.Value, howTallBricks.Value / raycast.Distance, workspace.WOAHH.Size.Z)
+		--print("how was the falll")
+		
+		
+		--the parts are ON the screen now 
+
+		local attachScreen = Instance.new("Attachment")
+		attachScreen.Parent = workspace.screen
+		local newPart = Instance.new("Part")
+		newPart.Anchored = true
+		newPart.Size = workspace.WOAHH.Size
+		table.insert(oldies, newPart)
+			table.insert(oldies, attachScreen)
+			
+			local bleh = 1 - (raycast.Distance / 30)
+			bleh = math.clamp(bleh, 0, 1)
+
+			local baseColor = raycast.Instance.Color
+			newPart.Color = Color3.new(
+				math.clamp(baseColor.R * bleh, 0, 1),
+				math.clamp(baseColor.G * bleh, 0, 1),
+				math.clamp(baseColor.B * bleh, 0, 1)
+			)
+		
+			attachScreen.Position = Vector3.new(addingAgain,0, 0)
+		newPart.Parent = workspace
+		newPart.Position = attachScreen.WorldPosition
+	else
+			attach2.Position = direction
+		end
+    
+		table.insert(oldies, attach1)
+		table.insert(oldies, attach2)
+		table.insert(oldies, beam)
+	end
+end
