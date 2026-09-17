@@ -1,0 +1,55 @@
+local attribute = script.Parent.Parent.Parent.Parent:GetAttribute("DItems")
+local plr = script.Parent.Parent.Parent.Parent.Parent
+local char = plr.Character or plr.CharacterAppearanceLoaded:Wait() --for a deltarune game.
+
+plr.AttributeChanged:Connect(function(attr)
+	if attr == "DItems" then
+		for i, lilbutton in pairs(script.Parent.Row1:GetChildren()) do
+			if lilbutton:IsA("TextButton") then
+				lilbutton:Destroy()
+			end
+		end
+		for i, lilbutton in pairs(script.Parent.Row2:GetChildren()) do
+			if lilbutton:IsA("TextButton") then
+				lilbutton:Destroy()
+			end
+		end
+		
+		local tableItems = game:GetService("HttpService"):JSONDecode(game:GetService("DataStoreService"):GetDataStore("LeaderStatSave"):GetAsync("DItems".. plr.UserId))
+		local listThing = 0
+		for i, v in pairs(tableItems) do
+			local itemFile = game.ReplicatedStorage.DarkItems:FindFirstChild(v[1]):Clone()
+			if itemFile.Functionality.Value == "Key" then
+				itemFile.Name = "Data"
+				print(itemFile)
+
+				listThing += 1
+				local clone = script.Parent.keyEx:Clone()
+				clone.LocalScript.Enabled = true
+				if itemFile.Functionality.Interactable.Value == false then
+					clone.TextColor3 = Color3.new(0.584314, 0.584314, 0.584314)
+					clone.LocalScript.Enabled = false
+					clone.LocalScript2.Enabled = true
+				else
+					clone.TextColor3 = Color3.new(1, 1, 1)
+					clone.LocalScript.Enabled = true
+					clone.LocalScript2.Enabled = true
+					local cloneScript = script:FindFirstChild(v[1]):Clone()
+					cloneScript.Parent = clone
+					cloneScript.Enabled = true
+				end
+				itemFile.Parent = clone
+				if listThing <= 7 then
+					clone.Parent = script.Parent.Row1
+				else
+					clone.Parent = script.Parent.Row2
+				end
+				clone.Text = v[1]
+				clone.Name = v[1]
+				clone.Visible = true
+			else
+				itemFile:Destroy()
+			end
+		end
+	end
+end)
